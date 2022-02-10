@@ -1,0 +1,19 @@
+{
+  "slack": {
+    "type": "slack",
+    "channel": "channel",
+    "token": "token",
+    "botUsername": "bot",
+    "botIconUrl": "https://avatars.slack-edge.com/bot.jpg"
+  },
+  "sendgrid": {
+    "type": "sendgrid",
+    "apiKey": "key",
+    "subjectPrefix": "[Monitoring]",
+    "from": "no-reply@example.com",
+    "fromName": "Monitoring",
+    "to": "john.doe@example.com",
+    "toName": "John Doe",
+    "notifyOnResolve": false
+  }
+}

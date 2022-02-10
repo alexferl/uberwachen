@@ -1,0 +1,8 @@
+{
+  "check_website_up": {
+    "command": "check_website google.com",
+    "handlers": ["console"],
+    "interval": 5,
+    "max_attempts": 1
+  }
+}

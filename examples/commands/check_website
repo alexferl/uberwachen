@@ -1,0 +1,11 @@
+#!/bin/bash
+
+WEBSITE=$1
+
+if curl -IL -s --head  --request GET "$WEBSITE" | grep "200 OK" > /dev/null; then
+   echo "$WEBSITE is UP"
+   exit 0
+else
+   echo "$WEBSITE is DOWN"
+   exit 2
+fi
