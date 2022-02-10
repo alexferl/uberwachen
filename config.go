@@ -25,6 +25,7 @@ type Config struct {
 type MongoDB struct {
 	URI                    string
 	DatabaseName           string
+	ReplicaSet             string
 	Username               string
 	Password               string
 	ConnectTimeout         time.Duration
@@ -45,6 +46,7 @@ func NewConfig() *Config {
 			URI:                    "mongodb://localhost:27017",
 			DatabaseName:           "uberwachen",
 			Username:               "",
+			ReplicaSet:             "",
 			Password:               "",
 			ConnectTimeout:         5 * time.Second,
 			ServerSelectionTimeout: 5 * time.Second,
@@ -61,9 +63,12 @@ func (c *Config) addFlags(fs *pflag.FlagSet) {
 		"Path to the commands files")
 	fs.StringVar(&c.HandlersPath, "handlers-path", c.HandlersPath,
 		"Path to the handlers definition files")
+
+	// MongoDB
 	fs.StringVar(&c.MongoDB.URI, "mongodb-uri", c.MongoDB.URI, "MongoDB URI")
 	fs.StringVar(&c.MongoDB.DatabaseName, "mongodb-database-name", c.MongoDB.DatabaseName,
 		"MongoDB database name")
+	fs.StringVar(&c.MongoDB.ReplicaSet, "mongodb-replica-set", c.MongoDB.ReplicaSet, "MongoDB replica set")
 	fs.StringVar(&c.MongoDB.Username, "mongodb-username", c.MongoDB.Username, "MongoDB username")
 	fs.StringVar(&c.MongoDB.Password, "mongodb-password", c.MongoDB.Password, "MongoDB password")
 	fs.DurationVar(&c.MongoDB.ConnectTimeout, "mongodb-connect-timeout", c.MongoDB.ConnectTimeout,
