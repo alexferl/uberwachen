@@ -1,12 +1,13 @@
 package main
 
 import (
+	"time"
+
 	xconfig "github.com/alexferl/golib/config"
 	xhttp "github.com/alexferl/golib/http/config"
 	xlog "github.com/alexferl/golib/log"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"time"
 )
 
 // Config holds all configuration for our program

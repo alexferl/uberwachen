@@ -1,11 +1,11 @@
 package factories
 
 import (
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 
 	"github.com/alexferl/uberwachen/handlers"
 	"github.com/alexferl/uberwachen/storage"
-	"github.com/rs/zerolog/log"
 )
 
 // Handler creates a new object with handlers.HandlerSender interface
