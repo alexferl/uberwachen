@@ -30,7 +30,7 @@ func main() {
 	loadBackend()
 
 	handlersRegistry := registries.NewHandlers()
-	log.Info().Msg("Adding handlers")
+	log.Info().Msg("Registering handlers")
 	loadHandlers(handlersRegistry)
 
 	log.Info().Msg("Adding and scheduling checks")
@@ -40,8 +40,6 @@ func main() {
 	go api.Start()
 
 	log.Info().Msg("Starting scheduler")
-	//<-s.Start()
-
 	for {
 		select {}
 	}
@@ -55,10 +53,9 @@ func createFolders() {
 
 func createFolder(keyName string) {
 	path := viper.GetString(keyName)
-	pathExists, pathErr := util.PathExists(path)
-
-	if pathErr != nil {
-		log.Panic().Msgf("Error checking %s: %v", keyName, pathErr)
+	pathExists, err := util.PathExists(path)
+	if err != nil {
+		log.Panic().Msgf("Error checking %s: %v", keyName, err)
 		os.Exit(1)
 	}
 
@@ -102,9 +99,9 @@ func loadHandlers(registry *registries.Handlers) {
 
 func loadAndScheduleChecks(registry *registries.Handlers) {
 	fileLoader := loaders.NewFileLoader(viper.GetString("checks-path"))
-	flErr := fileLoader.Load(registry)
-	if flErr != nil {
-		log.Error().Msgf("Error adding checks: %v", flErr)
+	err := fileLoader.Load(registry)
+	if err != nil {
+		log.Error().Msgf("Error adding checks: %v", err)
 	}
 
 	for _, c := range fileLoader.(*loaders.FileLoader).Checks {
@@ -115,9 +112,12 @@ func loadAndScheduleChecks(registry *registries.Handlers) {
 		}
 
 		if exists {
-			go runEvery(time.Duration(int32(c.Interval))*time.Second, handlers.RunCheck, c)
 			log.Info().Msgf("Scheduling check '%s'", c.Name)
-			go handlers.RunCheck(c)
+			go runEvery(time.Duration(int32(c.Interval))*time.Second, handlers.RunCheck, c)
+
+			if viper.GetBool("run-checks-on-start") {
+				go handlers.RunCheck(c)
+			}
 		} else {
 			log.Error().Msgf("Command for check '%s' does not exists", c.Name)
 		}

@@ -12,13 +12,14 @@ import (
 
 // Config holds all configuration for our program
 type Config struct {
-	Config       *xconfig.Config
-	Http         *xhttp.Config
-	Logging      *xlog.Config
-	ChecksPath   string
-	CommandsPath string
-	HandlersPath string
-	MongoDB      *MongoDB
+	Config           *xconfig.Config
+	Http             *xhttp.Config
+	Logging          *xlog.Config
+	ChecksPath       string
+	CommandsPath     string
+	HandlersPath     string
+	RunChecksOnStart bool
+	MongoDB          *MongoDB
 }
 
 // MongoDB holds all the configuration for the MongoDB storage
@@ -36,12 +37,13 @@ type MongoDB struct {
 // NewConfig creates a Config instance
 func NewConfig() *Config {
 	return &Config{
-		Config:       xconfig.New(),
-		Http:         xhttp.DefaultConfig,
-		Logging:      xlog.DefaultConfig,
-		ChecksPath:   "./examples/checks",
-		CommandsPath: "./examples/commands",
-		HandlersPath: "./examples/handlers",
+		Config:           xconfig.New(),
+		Http:             xhttp.DefaultConfig,
+		Logging:          xlog.DefaultConfig,
+		ChecksPath:       "./examples/checks",
+		CommandsPath:     "./examples/commands",
+		HandlersPath:     "./examples/handlers",
+		RunChecksOnStart: false,
 		MongoDB: &MongoDB{
 			URI:                    "mongodb://localhost:27017",
 			DatabaseName:           "uberwachen",
@@ -63,6 +65,8 @@ func (c *Config) addFlags(fs *pflag.FlagSet) {
 		"Path to the commands files")
 	fs.StringVar(&c.HandlersPath, "handlers-path", c.HandlersPath,
 		"Path to the handlers definition files")
+	fs.BoolVar(&c.RunChecksOnStart, "run-checks-on-start", c.RunChecksOnStart,
+		"Run checks when they're first registered and then on their normal schedule")
 
 	// MongoDB
 	fs.StringVar(&c.MongoDB.URI, "mongodb-uri", c.MongoDB.URI, "MongoDB URI")

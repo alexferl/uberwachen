@@ -3,7 +3,6 @@ package loaders
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -44,7 +43,7 @@ func (fl *FileLoader) Load(registry *registries.Handlers) error {
 	}
 
 	if len(files) == 0 {
-		log.Info().Msg("No checks defined")
+		log.Warn().Msg("No checks defined")
 	}
 
 	for _, file := range files {
@@ -99,42 +98,41 @@ func (fl *FileLoader) parseChecks(m map[string]interface{}, registry *registries
 				return err
 			}
 
-			var ch handlers.CheckLoad
-			if err := json.Unmarshal(b, &ch); err != nil {
+			var cl handlers.CheckLoad
+			if err := json.Unmarshal(b, &cl); err != nil {
 				return err
 			}
 
 			c := handlers.NewCheck()
 			c.Name = key
 
-			if ch.Command == "" {
-				msg := fmt.Sprintf("Command is required")
-				return errors.New(msg)
+			if cl.Command == "" {
+				return errors.New("command is required")
 			} else {
-				c.Command = ch.Command
+				c.Command = cl.Command
 			}
 
-			if ch.Interval == 0 {
-				msg := fmt.Sprintf("Interval is required")
-				return errors.New(msg)
+			if cl.Interval == 0 {
+				return errors.New("interval is required")
 			} else {
-				c.Interval = ch.Interval
+				c.Interval = cl.Interval
 			}
 
-			if ch.MaxAttempts == 0 {
+			if cl.MaxAttempts == 0 {
 				c.MaxAttempts = 1
 			} else {
-				c.MaxAttempts = ch.MaxAttempts
+				c.MaxAttempts = cl.MaxAttempts
 			}
 
-			c.Renotify = ch.Renotify
-			c.HandlerNames = ch.HandlerNames
+			c.Renotify = cl.Renotify
+			c.HandlerNames = cl.HandlerNames
 
-			for _, handler := range ch.HandlerNames {
-				h, _ := registry.Get(handler)
-				if h.Handler != nil {
-					c.Handlers = append(c.Handlers, h)
+			for _, handler := range cl.HandlerNames {
+				h, err := registry.Get(handler)
+				if err != nil {
+					return err
 				}
+				c.Handlers = append(c.Handlers, h)
 			}
 
 			if !checkInSlice(c, fl.Checks) {
