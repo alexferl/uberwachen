@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 
 	"github.com/alexferl/uberwachen/handlers"
+	"github.com/alexferl/uberwachen/registries"
 )
 
 type FileLoader struct {
@@ -25,7 +25,7 @@ func NewFileLoader(path string) Loader {
 	})
 }
 
-func (fl *FileLoader) Load() error {
+func (fl *FileLoader) Load(registry *registries.Handlers) error {
 	abs, err := filepath.Abs(fl.Path)
 	if err != nil {
 		return err
@@ -65,7 +65,7 @@ func (fl *FileLoader) Load() error {
 			return err
 		}
 
-		err = fl.parseChecks(m)
+		err = fl.parseChecks(m, registry)
 		if err != nil {
 			return err
 		}
@@ -74,8 +74,8 @@ func (fl *FileLoader) Load() error {
 	return nil
 }
 
-func checkInSlice(check *handlers.Check, list []*handlers.Check) bool {
-	for _, c := range list {
+func checkInSlice(check *handlers.Check, slice []*handlers.Check) bool {
+	for _, c := range slice {
 		if c.Name == check.Name {
 			return true
 		}
@@ -83,7 +83,7 @@ func checkInSlice(check *handlers.Check, list []*handlers.Check) bool {
 	return false
 }
 
-func (fl *FileLoader) parseChecks(m map[string]interface{}) error {
+func (fl *FileLoader) parseChecks(m map[string]interface{}, registry *registries.Handlers) error {
 	keys := make([]string, len(m))
 
 	i := 0
@@ -93,43 +93,47 @@ func (fl *FileLoader) parseChecks(m map[string]interface{}) error {
 	}
 
 	for _, key := range keys {
-		if check, ok := m[key].(map[string]interface{}); ok {
-			c := &handlers.Check{}
+		if _, ok := m[key]; ok {
+			b, err := json.Marshal(m[key])
+			if err != nil {
+				return err
+			}
 
+			var ch handlers.CheckLoad
+			if err := json.Unmarshal(b, &ch); err != nil {
+				return err
+			}
+
+			c := handlers.NewCheck()
 			c.Name = key
 
-			if m[key].(map[string]interface{})["command"] == nil {
+			if ch.Command == "" {
 				msg := fmt.Sprintf("Command is required")
 				return errors.New(msg)
 			} else {
-				c.Command = m[key].(map[string]interface{})["command"].(string)
+				c.Command = ch.Command
 			}
 
-			if m[key].(map[string]interface{})["interval"] == nil {
+			if ch.Interval == 0 {
 				msg := fmt.Sprintf("Interval is required")
 				return errors.New(msg)
 			} else {
-				c.Interval = int(m[key].(map[string]interface{})["interval"].(float64))
+				c.Interval = ch.Interval
 			}
 
-			if m[key].(map[string]interface{})["max_attempts"] == nil {
+			if ch.MaxAttempts == 0 {
 				c.MaxAttempts = 1
 			} else {
-				c.MaxAttempts = int(m[key].(map[string]interface{})["max_attempts"].(float64))
+				c.MaxAttempts = ch.MaxAttempts
 			}
 
-			if m[key].(map[string]interface{})["renotify"] == nil {
-				c.Renotify = false
-			} else {
-				c.Renotify = m[key].(map[string]interface{})["renotify"].(bool)
-			}
+			c.Renotify = ch.Renotify
+			c.HandlerNames = ch.HandlerNames
 
-			if m[key].(map[string]interface{})["handlers"] != nil {
-				for _, handler := range m[key].(map[string]interface{})["handlers"].([]interface{}) {
-					h := fl.addHandler(handler.(string))
-					if h.Handler != nil {
-						c.Handlers = append(c.Handlers, h)
-					}
+			for _, handler := range ch.HandlerNames {
+				h, _ := registry.Get(handler)
+				if h.Handler != nil {
+					c.Handlers = append(c.Handlers, h)
 				}
 			}
 
@@ -137,18 +141,9 @@ func (fl *FileLoader) parseChecks(m map[string]interface{}) error {
 				fl.Checks = append(fl.Checks, c)
 			}
 
-		} else {
-			msg := fmt.Sprintf("check not a map[string]interface{}: %v\n", check)
-			err := errors.New(msg)
-			return err
 		}
 	}
 	return nil
-}
-
-func (fl *FileLoader) addHandler(handler string) handlers.Handler {
-	v := viper.Get("handlers").(map[string]handlers.Handler)
-	return v[handler]
 }
 
 // isDirectory check if the path is a directory

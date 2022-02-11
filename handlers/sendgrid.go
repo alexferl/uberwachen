@@ -8,8 +8,8 @@ import (
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
 
-// SendGridHandler represents a SendGrid handler
-type SendGridHandler struct {
+// sendGridHandler represents a SendGrid handler
+type sendGridHandler struct {
 	*Handler
 	ApiKey          string `json:"api_key" bson:"api_key"`
 	SubjectPrefix   string `json:"subject_prefix" bson:"subject_prefix"`
@@ -20,11 +20,11 @@ type SendGridHandler struct {
 	NotifyOnResolve bool   `json:"notify_on_resolve" bson:"notify_on_resolve"`
 }
 
-// NewSendGridHandler creates a SendGridHandler instance
-func NewSendGridHandler(apiKey, subjectPrefix, from, fromName, to, toName string, notifyOnResolve bool) Handler {
-	return Handler{
+// NewSendGridHandler creates a sendGridHandler instance
+func NewSendGridHandler(apiKey, subjectPrefix, from, fromName, to, toName string, notifyOnResolve bool) *Handler {
+	return &Handler{
 		Type: "sendgrid",
-		Handler: &SendGridHandler{
+		Handler: &sendGridHandler{
 			ApiKey:          apiKey,
 			SubjectPrefix:   subjectPrefix,
 			From:            from,
@@ -37,7 +37,7 @@ func NewSendGridHandler(apiKey, subjectPrefix, from, fromName, to, toName string
 }
 
 // Send sends an email via the SendGrid API
-func (sg *SendGridHandler) Send(msg *Message) error {
+func (sg *sendGridHandler) Send(msg *Message) error {
 	if sg.NotifyOnResolve {
 		subject := fmt.Sprintf("%s %s", sg.SubjectPrefix, msg.Title)
 

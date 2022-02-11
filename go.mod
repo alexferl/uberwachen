@@ -6,7 +6,6 @@ require (
 	github.com/alexferl/golib/config v0.0.0-20220209021910-e476bf963a39
 	github.com/alexferl/golib/http v0.0.0-20220209021910-e476bf963a39
 	github.com/alexferl/golib/log v0.0.0-20220209021910-e476bf963a39
-	github.com/jasonlvhit/gocron v0.0.1
 	github.com/jpillora/backoff v1.0.0
 	github.com/labstack/echo/v4 v4.6.3
 	github.com/nlopes/slack v0.6.0

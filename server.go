@@ -8,11 +8,12 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/jasonlvhit/gocron"
+	"github.com/alexferl/uberwachen/api"
+	"github.com/alexferl/uberwachen/registries"
+
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 
-	"github.com/alexferl/uberwachen/api"
 	"github.com/alexferl/uberwachen/factories"
 	"github.com/alexferl/uberwachen/handlers"
 	"github.com/alexferl/uberwachen/loaders"
@@ -28,17 +29,22 @@ func main() {
 	log.Info().Msg("Connecting to database")
 	loadBackend()
 
+	handlersRegistry := registries.NewHandlers()
 	log.Info().Msg("Adding handlers")
-	loadHandlers()
+	loadHandlers(handlersRegistry)
 
 	log.Info().Msg("Adding and scheduling checks")
-	s := loadAndScheduleChecks()
+	loadAndScheduleChecks(handlersRegistry)
 
 	log.Info().Msg("Starting HTTP API")
 	go api.Start()
 
 	log.Info().Msg("Starting scheduler")
-	<-s.Start()
+	//<-s.Start()
+
+	for {
+		select {}
+	}
 }
 
 func createFolders() {
@@ -82,26 +88,25 @@ func loadBackend() {
 	viper.Set("storage", db)
 }
 
-func loadHandlers() {
-	handlersMap := make(map[string]handlers.Handler)
-	handlersMap["console"] = handlers.NewConsoleHandler()
-
-	err := walk(handlersMap)
+func loadHandlers(registry *registries.Handlers) {
+	err := registry.Register(handlers.NewConsoleHandler())
 	if err != nil {
-		log.Error().Msgf("Error adding handlers: %v", err)
+		log.Error().Msgf("Error registering console handler: %v", err)
 	}
 
-	viper.Set("handlers", handlersMap)
+	err = walk(registry)
+	if err != nil {
+		log.Error().Msgf("Error registering handlers: %v", err)
+	}
 }
 
-func loadAndScheduleChecks() *gocron.Scheduler {
+func loadAndScheduleChecks(registry *registries.Handlers) {
 	fileLoader := loaders.NewFileLoader(viper.GetString("checks-path"))
-	flErr := fileLoader.Load()
+	flErr := fileLoader.Load(registry)
 	if flErr != nil {
 		log.Error().Msgf("Error adding checks: %v", flErr)
 	}
 
-	s := gocron.NewScheduler()
 	for _, c := range fileLoader.(*loaders.FileLoader).Checks {
 		cmdPath := util.GetCmdPath(c.Command)
 		exists, err := util.PathExists(cmdPath)
@@ -110,15 +115,19 @@ func loadAndScheduleChecks() *gocron.Scheduler {
 		}
 
 		if exists {
-			s.Every(uint64(c.Interval)).Seconds().Do(handlers.RunCheck, c)
+			go runEvery(time.Duration(int32(c.Interval))*time.Second, handlers.RunCheck, c)
 			log.Info().Msgf("Scheduling check '%s'", c.Name)
 			go handlers.RunCheck(c)
 		} else {
 			log.Error().Msgf("Command for check '%s' does not exists", c.Name)
 		}
 	}
+}
 
-	return s
+func runEvery(d time.Duration, f func(c *handlers.Check), c *handlers.Check) {
+	for range time.Tick(d) {
+		f(c)
+	}
 }
 
 func visit(files *[]string) filepath.WalkFunc {
@@ -136,7 +145,7 @@ func visit(files *[]string) filepath.WalkFunc {
 	}
 }
 
-func walk(hs map[string]handlers.Handler) error {
+func walk(registry *registries.Handlers) error {
 	var files []string
 
 	root := viper.GetString("handlers-path")
@@ -183,7 +192,11 @@ func walk(hs map[string]handlers.Handler) error {
 			handlerType := m[k].(map[string]interface{})["type"].(string)
 			log.Info().Msgf("Adding handler '%s' as type '%s'", k, handlerType)
 			newHandler := factories.Handler(handlerType, m[k].(map[string]interface{}))
-			hs[k] = newHandler
+			newHandler.Name = k
+			err := registry.Register(newHandler)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil

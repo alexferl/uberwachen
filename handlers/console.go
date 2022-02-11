@@ -4,21 +4,22 @@ import (
 	"fmt"
 )
 
-// ConsoleHandler represents a console handler
-type ConsoleHandler struct {
+// consoleHandler represents a console handler
+type consoleHandler struct {
 	*Handler
 }
 
-// NewConsoleHandler creates a ConsoleHandler instance
-func NewConsoleHandler() Handler {
-	return Handler{
+// NewConsoleHandler creates a consoleHandler instance
+func NewConsoleHandler() *Handler {
+	return &Handler{
+		Name:    "console",
 		Type:    "console",
-		Handler: &ConsoleHandler{},
+		Handler: &consoleHandler{},
 	}
 }
 
 // Send outputs the message to the console
-func (c *ConsoleHandler) Send(msg *Message) error {
+func (c *consoleHandler) Send(msg *Message) error {
 	fmt.Printf("%s: %s\n", msg.Title, msg.Body)
 	return nil
 }

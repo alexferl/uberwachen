@@ -18,35 +18,9 @@ const (
 )
 
 type Event struct {
-	ID string `json:"id" bson:"_id"`
 	*Check
+	ID        string    `json:"id" bson:"_id"`
 	CreatedAt time.Time `json:"created_at" bson:"created_at"`
-}
-
-type Incident struct {
-	ID string `json:"id" bson:"_id"`
-	*Check
-	Message       *Message  `json:"-" bson:"-"`
-	Name          string    `json:"name"`
-	CreatedAt     time.Time `json:"created_at" bson:"created_at"`
-	LastUpdatedAt time.Time `json:"last_updated_at" bson:"last_updated_at"`
-}
-
-func NewIncident(c *Check) *Incident {
-	id := util.GenerateShortId()
-	c.Attempts = 1
-	return &Incident{
-		ID:        id,
-		CreatedAt: time.Now().UTC(),
-		Check:     c,
-		Name:      c.Name,
-	}
-}
-
-func (i *Incident) Update(output string) {
-	i.Check.Output = output
-	i.Check.Attempts += 1
-	i.LastUpdatedAt = time.Now().UTC()
 }
 
 type Message struct {
@@ -184,8 +158,8 @@ func (e *Event) handle(msg *Message) {
 	}
 }
 
-func (e *Event) getHandlers() []Handler {
-	var handlers []Handler
+func (e *Event) getHandlers() []*Handler {
+	var handlers []*Handler
 
 	if len(e.Check.Handlers) > 0 {
 		for _, handler := range e.Check.Handlers {

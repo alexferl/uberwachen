@@ -11,23 +11,36 @@ import (
 	"github.com/alexferl/uberwachen/util"
 )
 
+// CheckLoad is used to load a check from a file,
+// and then it gets converted to a Check
+type CheckLoad struct {
+	Name         string   `json:"name"`
+	Command      string   `json:"command"`
+	Interval     int      `json:"interval"`
+	MaxAttempts  int      `json:"max_attempts" bson:"max_attempts"`
+	HandlerNames []string `json:"handlers" bson:"handlers"`
+	Renotify     bool     `json:"renotify"`
+}
+
 // Check represents a check
 type Check struct {
-	Attempts       int       `json:"attempts"`
-	Command        string    `json:"command"`
-	Duration       float64   `json:"duration"`
-	ExecutedAt     time.Time `json:"executed_at" bson:"executed_at"`
-	Handlers       []Handler `json:"handlers"`
-	History        []int     `json:"history"`
-	Interval       int       `json:"interval"`
-	IssuedAt       time.Time `json:"issued_at" bson:"issued_at"`
-	MaxAttempts    int       `json:"max_attempts" bson:"max_attempts"`
-	Name           string    `json:"name"`
-	PreviousOutput string    `json:"previous_output" bson:"previous_output"`
-	Output         string    `json:"output"`
-	Renotify       bool      `json:"renotify"`
-	Status         int       `json:"status"`
-	Type           string    `json:"type,omitempty" bson:"type,omitempty"`
+	*CheckLoad     `bson:",inline"`
+	Attempts       int        `json:"attempts"`
+	Duration       float64    `json:"duration"`
+	ExecutedAt     time.Time  `json:"executed_at" bson:"executed_at"`
+	History        []int      `json:"history"`
+	IssuedAt       time.Time  `json:"issued_at" bson:"issued_at"`
+	PreviousOutput string     `json:"previous_output" bson:"previous_output"`
+	Output         string     `json:"output"`
+	Status         int        `json:"status"`
+	Handlers       []*Handler `json:"-" bson:"-"`
+}
+
+// NewCheck creates a new Check
+func NewCheck() *Check {
+	return &Check{
+		CheckLoad: &CheckLoad{},
+	}
 }
 
 // RunCheck runs a Check and fires an Event with the result for processing

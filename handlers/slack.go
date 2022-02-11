@@ -7,8 +7,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// SlackHandler represents a Slack handler
-type SlackHandler struct {
+// slackHandler represents a Slack handler
+type slackHandler struct {
 	*Handler
 	Channel     string `json:"channel"`
 	Token       string `json:"token"`
@@ -16,13 +16,11 @@ type SlackHandler struct {
 	BotIconUrl  string `json:"bot_icon_url" bson:"bot_icon_url"`
 }
 
-type Slack SlackHandler
-
-// NewSlackHandler creates a SlackHandler instance
-func NewSlackHandler(channel, token, botUsername, botIconUrl string) Handler {
-	return Handler{
+// NewSlackHandler creates a slackHandler instance
+func NewSlackHandler(channel, token, botUsername, botIconUrl string) *Handler {
+	return &Handler{
 		Type: "slack",
-		Handler: &SlackHandler{
+		Handler: &slackHandler{
 			Channel:     channel,
 			Token:       token,
 			BotUsername: botUsername,
@@ -32,7 +30,7 @@ func NewSlackHandler(channel, token, botUsername, botIconUrl string) Handler {
 }
 
 // Send sends a message to a Slack channel
-func (s *SlackHandler) Send(msg *Message) error {
+func (s *slackHandler) Send(msg *Message) error {
 	text := fmt.Sprintf("%s \n %s", msg.Title, msg.Body)
 	var color string
 

@@ -9,7 +9,7 @@ import (
 )
 
 // Handler creates a new object with handlers.HandlerSender interface
-func Handler(handlerType string, handlerConfig map[string]interface{}) handlers.Handler {
+func Handler(handlerType string, handlerConfig map[string]interface{}) *handlers.Handler {
 	switch handlerType {
 	case "console":
 		return handlers.NewConsoleHandler()
@@ -34,7 +34,7 @@ func Handler(handlerType string, handlerConfig map[string]interface{}) handlers.
 	default:
 		log.Warn().Msgf("Unknown handler type '%s'", handlerType)
 		var h handlers.Handler
-		return h
+		return &h
 	}
 }
 

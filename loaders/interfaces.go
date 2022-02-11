@@ -1,5 +1,7 @@
 package loaders
 
+import "github.com/alexferl/uberwachen/registries"
+
 type Loader interface {
-	Load() error
+	Load(registry *registries.Handlers) error
 }
